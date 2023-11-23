@@ -6,6 +6,7 @@ use std::str;
 use std::str::Utf8Error;
 use super::{QueryString, QueryStringValue};
 
+#[derive(Debug)]
 pub struct Request<'buf> {
     method: Method,
     path: &'buf str,
