@@ -1,31 +1,43 @@
-use super::method::Method;
+use super::method::{Method, MethodError};
 use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult, Debug};
 use std::str;
 use std::str::Utf8Error;
 
-pub struct Request {
+pub struct Request<'buf> {
     method: Method,
-    path: String,
-    query_string: Option<String>,
+    path: &'buf str,
+    query_string: Option<&'buf str>,
 }
 
-impl TryFrom<&[u8]> for Request {
+impl<'buf> TryFrom<&'buf [u8]> for Request<'buf> {
     type Error = ParseError;
 
-    fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(buffer: &'buf [u8]) -> Result<Self, Self::Error> {
         let request = str::from_utf8(buffer)?; 
 
         let (method, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
-        let (path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
+        let (mut path, request) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
         let (protocal,_) = get_next_word(request).ok_or(ParseError::InvalidRequest)?;
 
         if protocal != "HTTP/1.1" {
             return Err(ParseError::InvalidProtocol);
         }
         
-        unimplemented!()
+        let method: Method = method.parse()?;
+
+        let mut query_string = None;
+        if let Some(i) = path.find('?')  {
+            query_string = Some(&path[i + 1..]);
+            path = &path[..i];
+        }
+
+        Ok(Self{
+            path,
+            query_string,
+            method,
+        })
     }
 }
 
@@ -64,6 +76,11 @@ impl From<Utf8Error> for ParseError{
     }
 }
 
+impl From<MethodError> for ParseError{
+    fn from(_: MethodError) -> Self {
+        Self::InvalidMethod
+    }
+}
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
