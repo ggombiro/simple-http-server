@@ -1,8 +1,7 @@
-use std::net::{TcpListener, TcpStream};
-use std::io::Read;
-use crate::http::Request;
+use crate::http::{response, Request, Response, StatusCode};
 use std::convert::TryFrom;
-use std::convert::TryInto;
+use std::io::{Read, Write};
+use std::net::{TcpListener, TcpStream};
 
 pub struct Server {
     address: String,
@@ -18,25 +17,37 @@ impl Server {
 
         let listener = TcpListener::bind(&self.address).unwrap();
 
-        loop{
-            match listener.accept(){
-                Err(e) =>  println!("Failed to establish a connection: {}", e),
+        loop {
+            match listener.accept() {
+                Err(e) => println!("Failed to establish a connection: {}", e),
                 Ok((mut stream, _)) => {
                     let mut buffer = [0; 1024];
-                    match stream.read(&mut buffer){
+                    match stream.read(&mut buffer) {
                         Ok(_) => {
                             println!("Received a request : {}", String::from_utf8_lossy(&buffer));
 
-                            match Request::try_from(&buffer[..]){
+                            let response = match Request::try_from(&buffer[..]) {
                                 Ok(request) => {
                                     dbg!(request);
-                                },
-                                Err(e) => println!("Failed to parse request {}", e),
+
+                                    Response::new(
+                                        StatusCode::Ok,
+                                        Some("<h1> IT WORKS!!!!</h1>".to_string()),
+                                    )
+                                }
+                                Err(e) => {
+                                    println!("Failed to parse request {}", e);
+                                    Response::new(StatusCode::BadRequest, None)
+                                }
+                            };
+
+                            if let Err(e) = response.send(&mut stream) {
+                                println!("Failed to send response: {}", e);
                             }
-                        },
+                        }
                         Err(e) => println!("Failed to read from connection: {}", e),
                     }
-                },
+                }
             }
         }
     }
