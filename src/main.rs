@@ -2,7 +2,6 @@
 #![allow(dead_code)]
 
 use server::Server;
-use http::{Request, Method};
 use website_handler::WebsiteHandler;
 use std::env;
 

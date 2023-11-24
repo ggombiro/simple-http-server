@@ -4,7 +4,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult, Debug};
 use std::str;
 use std::str::Utf8Error;
-use super::{QueryString, QueryStringValue};
+use super::QueryString;
 
 #[derive(Debug)]
 pub struct Request<'buf> {

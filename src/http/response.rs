@@ -1,5 +1,5 @@
 use super::StatusCode;
-use std::{fmt::{Display, Formatter, Result as FmtResult}, net::TcpStream, io::{Write, Result as IoResult}};
+use std::io::{Write, Result as IoResult};
 
 
 #[derive(Debug)]
